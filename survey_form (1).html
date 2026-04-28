@@ -1,0 +1,532 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Consumer Habits Survey</title>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+<style>
+*{box-sizing:border-box;margin:0;padding:0}
+body{font-family:system-ui,-apple-system,sans-serif;background:#f5f5f0;color:#1a1a2e;min-height:100vh}
+header{background:#1a1a2e;color:#fff;padding:2rem 1.5rem 1.5rem}
+header h1{font-size:1.6rem;font-weight:600;margin-bottom:4px}
+header p{font-size:0.85rem;opacity:0.6;margin-bottom:1rem}
+.prog-bar{height:3px;background:rgba(255,255,255,0.15);border-radius:2px;overflow:hidden}
+.prog-fill{height:100%;background:#c17435;border-radius:2px;transition:width 0.4s}
+.prog-lbl{font-size:11px;opacity:0.5;margin-top:6px}
+main{max-width:640px;margin:0 auto;padding:1.5rem 1rem 4rem}
+.card{background:#fff;border:1px solid #e5e5e0;border-radius:12px;padding:1.5rem;margin-bottom:1rem;display:none}
+.card.active{display:block;animation:fadeUp 0.3s ease}
+@keyframes fadeUp{from{opacity:0;transform:translateY(10px)}to{opacity:1;transform:translateY(0)}}
+.qmeta{display:flex;align-items:center;gap:8px;margin-bottom:10px}
+.qnum{width:24px;height:24px;border-radius:50%;background:#1a1a2e;color:#fff;font-size:11px;font-weight:600;display:flex;align-items:center;justify-content:center;flex-shrink:0}
+.badge{font-size:10px;font-weight:600;letter-spacing:0.07em;text-transform:uppercase;padding:2px 8px;border-radius:20px;background:#f0ebe3;color:#7a5c35}
+.req{margin-left:auto;font-size:11px;color:#c0392b}
+.qtxt{font-size:1.05rem;font-weight:600;line-height:1.45;margin-bottom:4px}
+.qhint{font-size:0.8rem;color:#666;margin-bottom:1.1rem}
+.opts{display:flex;flex-direction:column;gap:8px}
+.opt{display:flex;align-items:center;gap:10px;padding:10px 14px;border:1.5px solid #e5e5e0;border-radius:8px;background:#fff;cursor:pointer;font-family:inherit;font-size:0.9rem;color:#1a1a2e;text-align:left;width:100%;transition:border-color 0.15s,background 0.15s}
+.opt:hover{border-color:#c17435;background:#fdf6ee}
+.opt.sel{border-color:#c17435;background:#fdf6ee}
+.ind{width:18px;height:18px;border:2px solid #ccc;border-radius:50%;flex-shrink:0;display:flex;align-items:center;justify-content:center;transition:all 0.15s}
+.opt.sel .ind{border-color:#c17435;background:#c17435}
+.opt.sel .ind::after{content:'';width:6px;height:6px;border-radius:50%;background:#fff}
+.chk{width:18px;height:18px;border:2px solid #ccc;border-radius:4px;flex-shrink:0;display:flex;align-items:center;justify-content:center;transition:all 0.15s}
+.opt.sel .chk{border-color:#c17435;background:#c17435}
+.opt.sel .chk::after{content:'✓';font-size:11px;color:#fff;font-weight:700}
+.rating-row{display:flex;gap:6px;flex-wrap:wrap}
+.rbtn{width:42px;height:42px;border:1.5px solid #e5e5e0;border-radius:8px;background:#fff;cursor:pointer;font-family:inherit;font-size:0.9rem;font-weight:500;color:#1a1a2e;transition:all 0.15s;display:flex;align-items:center;justify-content:center}
+.rbtn:hover,.rbtn.sel{border-color:#c17435;background:#c17435;color:#fff}
+.rlabels{display:flex;justify-content:space-between;margin-top:6px;font-size:11px;color:#888}
+.stars{display:flex;gap:6px;margin-bottom:4px}
+.star{font-size:2rem;cursor:pointer;color:#ddd;transition:color 0.15s,transform 0.1s;background:none;border:none;padding:0;line-height:1}
+.star.lit{color:#f5a623}
+.star:hover{transform:scale(1.15)}
+textarea,input[type=text]{width:100%;padding:10px 12px;border:1.5px solid #e5e5e0;border-radius:8px;font-family:inherit;font-size:0.9rem;color:#1a1a2e;background:#fff;outline:none;resize:vertical;transition:border-color 0.15s}
+textarea:focus,input[type=text]:focus{border-color:#c17435}
+select{width:100%;padding:10px 12px;border:1.5px solid #e5e5e0;border-radius:8px;font-family:inherit;font-size:0.9rem;color:#1a1a2e;background:#fff;outline:none;cursor:pointer;appearance:none;background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='8'%3E%3Cpath d='M1 1l5 5 5-5' stroke='%23666' stroke-width='1.5' fill='none' stroke-linecap='round'/%3E%3C/svg%3E");background-repeat:no-repeat;background-position:right 12px center;transition:border-color 0.15s}
+select:focus{border-color:#c17435}
+.slider-wrap{padding:8px 0}
+input[type=range]{width:100%;accent-color:#c17435;height:4px;cursor:pointer}
+.slider-val{text-align:center;font-size:1.4rem;font-weight:600;color:#c17435;margin-top:8px}
+.matrix-row{display:flex;align-items:center;gap:8px;margin-bottom:8px;flex-wrap:wrap}
+.matrix-lbl{min-width:130px;font-size:0.85rem;color:#555;flex-shrink:0}
+.matrix-btns{display:flex;gap:4px}
+.mbtn{width:36px;height:36px;border:1.5px solid #e5e5e0;border-radius:6px;background:#fff;cursor:pointer;font-size:0.82rem;font-weight:500;color:#1a1a2e;transition:all 0.15s;display:flex;align-items:center;justify-content:center}
+.mbtn:hover,.mbtn.sel{border-color:#c17435;background:#c17435;color:#fff}
+.matrix-scale{display:flex;justify-content:space-between;font-size:10px;color:#aaa;margin-bottom:8px;padding-left:138px}
+.nav{display:flex;justify-content:space-between;align-items:center;margin-top:1.25rem}
+.btn-back{padding:8px 16px;border:1.5px solid #e5e5e0;border-radius:8px;background:#fff;font-family:inherit;font-size:0.85rem;color:#666;cursor:pointer;transition:all 0.15s}
+.btn-back:hover{border-color:#999;color:#1a1a2e}
+.btn-next{padding:9px 22px;border:none;border-radius:8px;background:#1a1a2e;font-family:inherit;font-size:0.9rem;font-weight:500;color:#fff;cursor:pointer;margin-left:auto;transition:background 0.15s}
+.btn-next:hover{background:#c17435}
+.btn-submit{padding:9px 22px;border:none;border-radius:8px;background:#2d6a4f;font-family:inherit;font-size:0.9rem;font-weight:500;color:#fff;cursor:pointer;margin-left:auto;transition:background 0.15s}
+.btn-submit:hover{background:#1e4d38}
+.err{font-size:0.78rem;color:#c0392b;margin-top:6px;display:none}
+.branch-note{font-size:11px;color:#7a5c35;margin-top:8px;padding:5px 10px;background:#fdf6ee;border-radius:6px;display:none}
+.thankyou{display:none;text-align:center;padding:3rem 1rem}
+.ty-icon{font-size:3rem;margin-bottom:1rem}
+.ty-icon svg{width:56px;height:56px}
+.thankyou h2{font-size:1.5rem;font-weight:600;margin-bottom:8px}
+.thankyou p{color:#666;font-size:0.9rem;margin-bottom:1.5rem}
+.btn-export{padding:12px 24px;border:none;border-radius:8px;background:#c17435;font-family:inherit;font-size:0.95rem;font-weight:500;color:#fff;cursor:pointer;display:inline-flex;align-items:center;gap:8px;transition:opacity 0.15s}
+.btn-export:hover{opacity:0.88}
+.btn-restart{display:block;margin:12px auto 0;background:none;border:none;font-family:inherit;font-size:0.82rem;color:#888;cursor:pointer;text-decoration:underline}
+@media(max-width:500px){.matrix-scale{padding-left:0}.matrix-row{flex-direction:column;align-items:flex-start}.matrix-lbl{min-width:unset}}
+</style>
+</head>
+<body>
+
+<header>
+  <div style="max-width:640px;margin:0 auto">
+    <div style="font-size:11px;letter-spacing:0.1em;text-transform:uppercase;color:#c17435;margin-bottom:6px">Market Research · 2025</div>
+    <h1>Consumer Habits Survey</h1>
+    <p>Approx. 3–5 minutes &nbsp;·&nbsp; Your responses are anonymous</p>
+    <div class="prog-bar"><div class="prog-fill" id="progFill" style="width:8%"></div></div>
+    <div class="prog-lbl" id="progLbl">Question 1 of 12</div>
+  </div>
+</header>
+
+<main>
+
+<!-- Q1 -->
+<div class="card active" id="q1">
+  <div class="qmeta"><div class="qnum">1</div><span class="badge">Single choice</span><span class="req">* Required</span></div>
+  <div class="qtxt">Do you currently shop online for products or services?</div>
+  <div class="qhint">Select the option that best describes you</div>
+  <div class="opts" id="o-q1"></div>
+  <div class="branch-note" id="bn-q1"></div>
+  <div class="err" id="e-q1">Please select an option to continue.</div>
+  <div class="nav"><div></div><button class="btn-next" onclick="advance('q1')">Next &rarr;</button></div>
+</div>
+
+<!-- Q2 -->
+<div class="card" id="q2">
+  <div class="qmeta"><div class="qnum">2</div><span class="badge">Multiple choice</span><span class="req">* Required</span></div>
+  <div class="qtxt">Which categories do you shop online? (Select all that apply)</div>
+  <div class="qhint">You can pick more than one</div>
+  <div class="opts" id="o-q2"></div>
+  <div class="err" id="e-q2">Please select at least one option.</div>
+  <div class="nav"><button class="btn-back" onclick="goBack()">&#8592; Back</button><button class="btn-next" onclick="advance('q2')">Next &rarr;</button></div>
+</div>
+
+<!-- Q3 -->
+<div class="card" id="q3">
+  <div class="qmeta"><div class="qnum">3</div><span class="badge">Rating scale</span><span class="req">* Required</span></div>
+  <div class="qtxt">How satisfied are you with your online shopping experience overall?</div>
+  <div class="qhint">Rate from 1 (very dissatisfied) to 10 (very satisfied)</div>
+  <div class="rating-row" id="o-q3"></div>
+  <div class="rlabels"><span>Very dissatisfied</span><span>Very satisfied</span></div>
+  <div class="branch-note" id="bn-q3"></div>
+  <div class="err" id="e-q3">Please select a rating.</div>
+  <div class="nav"><button class="btn-back" onclick="goBack()">&#8592; Back</button><button class="btn-next" onclick="advance('q3')">Next &rarr;</button></div>
+</div>
+
+<!-- Q4 (branched: shown only if Q3 <= 5) -->
+<div class="card" id="q4">
+  <div class="qmeta"><div class="qnum">4</div><span class="badge">Open text</span></div>
+  <div class="qtxt">What would you improve about your online shopping experience?</div>
+  <div class="qhint">Please be as specific as possible (optional)</div>
+  <textarea id="a-q4" rows="4" placeholder="Type your answer here..."></textarea>
+  <div class="nav"><button class="btn-back" onclick="goBack()">&#8592; Back</button><button class="btn-next" onclick="advance('q4')">Next &rarr;</button></div>
+</div>
+
+<!-- Q5 -->
+<div class="card" id="q5">
+  <div class="qmeta"><div class="qnum">5</div><span class="badge">Star rating</span><span class="req">* Required</span></div>
+  <div class="qtxt">How would you rate delivery speed from online retailers?</div>
+  <div class="stars" id="o-q5"></div>
+  <div class="err" id="e-q5">Please give a star rating.</div>
+  <div class="nav"><button class="btn-back" onclick="goBack()">&#8592; Back</button><button class="btn-next" onclick="advance('q5')">Next &rarr;</button></div>
+</div>
+
+<!-- Q6 (branched: shown only if Q1 = never shops online) -->
+<div class="card" id="q6">
+  <div class="qmeta"><div class="qnum">6</div><span class="badge">Single choice</span><span class="req">* Required</span></div>
+  <div class="qtxt">What is the main reason you don't shop online?</div>
+  <div class="opts" id="o-q6"></div>
+  <div class="err" id="e-q6">Please select an option.</div>
+  <div class="nav"><button class="btn-back" onclick="goBack()">&#8592; Back</button><button class="btn-next" onclick="advance('q6')">Next &rarr;</button></div>
+</div>
+
+<!-- Q7 -->
+<div class="card" id="q7">
+  <div class="qmeta"><div class="qnum">7</div><span class="badge">Slider</span></div>
+  <div class="qtxt">Approximately what % of your monthly purchases are in physical stores?</div>
+  <div class="slider-wrap">
+    <input type="range" min="0" max="100" value="50" step="5" id="sl-q7" oninput="document.getElementById('sv-q7').textContent=this.value+'%'">
+    <div class="slider-val" id="sv-q7">50%</div>
+  </div>
+  <div class="nav"><button class="btn-back" onclick="goBack()">&#8592; Back</button><button class="btn-next" onclick="advance('q7')">Next &rarr;</button></div>
+</div>
+
+<!-- Q8 -->
+<div class="card" id="q8">
+  <div class="qmeta"><div class="qnum">8</div><span class="badge">Aided &mdash; Dropdown</span><span class="req">* Required</span></div>
+  <div class="qtxt">Which platform do you use most for shopping?</div>
+  <div class="qhint">Aided question — select from the list</div>
+  <select id="a-q8">
+    <option value="">— Select a platform —</option>
+    <option>Amazon</option><option>Flipkart</option><option>Meesho</option>
+    <option>Myntra</option><option>Nykaa</option><option>Ajio</option>
+    <option>BigBasket</option><option>Blinkit / Zepto / Swiggy Instamart</option>
+    <option>Other</option><option>I don't use any of these</option>
+  </select>
+  <div class="err" id="e-q8">Please select an option.</div>
+  <div class="nav"><button class="btn-back" onclick="goBack()">&#8592; Back</button><button class="btn-next" onclick="advance('q8')">Next &rarr;</button></div>
+</div>
+
+<!-- Q9 -->
+<div class="card" id="q9">
+  <div class="qmeta"><div class="qnum">9</div><span class="badge">Aided &mdash; Single choice</span><span class="req">* Required</span></div>
+  <div class="qtxt">What is your approximate monthly spend on shopping?</div>
+  <div class="opts" id="o-q9"></div>
+  <div class="err" id="e-q9">Please select an option.</div>
+  <div class="nav"><button class="btn-back" onclick="goBack()">&#8592; Back</button><button class="btn-next" onclick="advance('q9')">Next &rarr;</button></div>
+</div>
+
+<!-- Q10 -->
+<div class="card" id="q10">
+  <div class="qmeta"><div class="qnum">10</div><span class="badge">Likert matrix</span><span class="req">* Required</span></div>
+  <div class="qtxt">How important are these factors when making a purchase?</div>
+  <div class="qhint">Rate each from 1 (not important) to 5 (very important)</div>
+  <div class="matrix-scale"><span>1</span><span>2</span><span>3</span><span>4</span><span>5</span></div>
+  <div id="o-q10"></div>
+  <div class="err" id="e-q10">Please rate all factors.</div>
+  <div class="nav"><button class="btn-back" onclick="goBack()">&#8592; Back</button><button class="btn-next" onclick="advance('q10')">Next &rarr;</button></div>
+</div>
+
+<!-- Q11 -->
+<div class="card" id="q11">
+  <div class="qmeta"><div class="qnum">11</div><span class="badge">Single choice</span><span class="req">* Required</span></div>
+  <div class="qtxt">What is your age group?</div>
+  <div class="opts" id="o-q11"></div>
+  <div class="err" id="e-q11">Please select your age group.</div>
+  <div class="nav"><button class="btn-back" onclick="goBack()">&#8592; Back</button><button class="btn-next" onclick="advance('q11')">Next &rarr;</button></div>
+</div>
+
+<!-- Q12 -->
+<div class="card" id="q12">
+  <div class="qmeta"><div class="qnum">12</div><span class="badge">Open text</span></div>
+  <div class="qtxt">Any other comments about your shopping habits?</div>
+  <div class="qhint">Optional</div>
+  <textarea id="a-q12" rows="4" placeholder="Your thoughts..."></textarea>
+  <div class="nav"><button class="btn-back" onclick="goBack()">&#8592; Back</button><button class="btn-submit" onclick="submitSurvey()">Submit &#10003;</button></div>
+</div>
+
+<!-- Thank you -->
+<div class="thankyou" id="thankyou">
+  <div class="ty-icon">
+    <svg viewBox="0 0 56 56" fill="none" xmlns="http://www.w3.org/2000/svg">
+      <circle cx="28" cy="28" r="28" fill="#e8f4f0"/>
+      <path d="M16 28l8 8 16-16" stroke="#2d6a4f" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"/>
+    </svg>
+  </div>
+  <h2>Thank you for your response!</h2>
+  <p id="ty-status" style="font-weight:500;margin-bottom:0.5rem">Saving to Google Sheets...</p>
+  <p style="font-size:0.82rem;color:#888;margin-bottom:1.5rem">You can also download a local Excel backup below.</p>
+  <button class="btn-export" onclick="exportExcel()">
+    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
+    Download as Excel
+  </button>
+  <button class="btn-restart" onclick="restartSurvey()">Fill out again</button>
+</div>
+
+</main>
+
+<script>
+var ans = {};
+var multi = { q2: [] };
+var matrix = {};
+var hist = [];
+var cur = 'q1';
+var allResp = [];
+
+var q1opts = ['Yes, frequently (weekly or more)','Yes, occasionally (monthly)','Rarely (a few times a year)','No, I never shop online'];
+var q2opts = ['Electronics & Gadgets','Clothing & Fashion','Groceries & Food','Health & Beauty','Books & Media','Home & Furniture'];
+var q6opts = ['Security / privacy concerns','I prefer to see products in person','No reliable internet / device','Don\'t trust delivery','Other reason'];
+var q9opts = ['Below \u20b91,000','\u20b91,000 \u2013 \u20b95,000','\u20b95,000 \u2013 \u20b915,000','Above \u20b915,000','Prefer not to say'];
+var q11opts = ['Under 18','18\u201324','25\u201334','35\u201344','45\u201354','55+'];
+var matrixRows = ['Price','Quality','Brand Reputation','Delivery Speed','Reviews & Ratings'];
+
+function buildOpts(qid, opts, multi) {
+  var c = document.getElementById('o-' + qid);
+  c.innerHTML = '';
+  opts.forEach(function(o) {
+    var b = document.createElement('button');
+    b.className = 'opt';
+    b.setAttribute('data-val', o);
+    var ind = document.createElement('div');
+    ind.className = multi ? 'chk' : 'ind';
+    b.appendChild(ind);
+    b.appendChild(document.createTextNode(o));
+    b.onclick = function() { handleOpt(b, qid, o, multi); };
+    c.appendChild(b);
+  });
+}
+
+function handleOpt(btn, qid, val, isMulti) {
+  if (isMulti) {
+    btn.classList.toggle('sel');
+    var arr = multi[qid] || [];
+    var idx = arr.indexOf(val);
+    if (idx === -1) arr.push(val); else arr.splice(idx, 1);
+    multi[qid] = arr;
+    ans[qid] = arr.join('; ');
+  } else {
+    var btns = document.querySelectorAll('#o-' + qid + ' .opt');
+    btns.forEach(function(b) { b.classList.remove('sel'); });
+    btn.classList.add('sel');
+    ans[qid] = val;
+    showBranchNote(qid, val);
+  }
+  hideErr(qid);
+}
+
+function showBranchNote(qid, val) {
+  var el = document.getElementById('bn-' + qid);
+  if (!el) return;
+  if (qid === 'q1') {
+    el.style.display = 'block';
+    el.textContent = val === 'No, I never shop online'
+      ? '\u2192 You will be asked about reasons for not shopping online.'
+      : '\u2192 You will be asked about your online shopping experience.';
+  }
+  if (qid === 'q3') {
+    el.style.display = parseInt(val) <= 5 ? 'block' : 'none';
+    el.textContent = '\u2192 Since your rating is low, we\u2019d like to know what to improve.';
+  }
+}
+
+function buildRating() {
+  var c = document.getElementById('o-q3');
+  c.innerHTML = '';
+  for (var i = 1; i <= 10; i++) {
+    (function(n) {
+      var b = document.createElement('button');
+      b.className = 'rbtn';
+      b.textContent = n;
+      b.onclick = function() {
+        document.querySelectorAll('#o-q3 .rbtn').forEach(function(x) { x.classList.remove('sel'); });
+        b.classList.add('sel');
+        ans['q3'] = String(n);
+        hideErr('q3');
+        showBranchNote('q3', String(n));
+      };
+      c.appendChild(b);
+    })(i);
+  }
+}
+
+function buildStars() {
+  var c = document.getElementById('o-q5');
+  c.innerHTML = '';
+  delete ans['q5'];
+  for (var i = 1; i <= 5; i++) {
+    (function(n) {
+      var b = document.createElement('button');
+      b.className = 'star';
+      b.textContent = '\u2605';
+      b.onclick = function() {
+        var all = document.querySelectorAll('#o-q5 .star');
+        all.forEach(function(s, idx) { s.classList.toggle('lit', idx < n); });
+        ans['q5'] = n + ' star' + (n > 1 ? 's' : '');
+        hideErr('q5');
+      };
+      c.appendChild(b);
+    })(i);
+  }
+}
+
+function buildMatrix() {
+  var c = document.getElementById('o-q10');
+  c.innerHTML = '';
+  matrixRows.forEach(function(row) {
+    var wrap = document.createElement('div');
+    wrap.className = 'matrix-row';
+    var lbl = document.createElement('div');
+    lbl.className = 'matrix-lbl';
+    lbl.textContent = row;
+    wrap.appendChild(lbl);
+    var btns = document.createElement('div');
+    btns.className = 'matrix-btns';
+    for (var i = 1; i <= 5; i++) {
+      (function(n, r) {
+        var b = document.createElement('button');
+        b.className = 'mbtn';
+        b.textContent = n;
+        b.onclick = function() {
+          btns.querySelectorAll('.mbtn').forEach(function(x) { x.classList.remove('sel'); });
+          b.classList.add('sel');
+          matrix[r] = n;
+          hideErr('q10');
+        };
+        btns.appendChild(b);
+      })(i, row);
+    }
+    wrap.appendChild(btns);
+    c.appendChild(wrap);
+  });
+}
+
+function getNext(qid) {
+  if (qid === 'q1') return ans['q1'] === 'No, I never shop online' ? 'q6' : 'q2';
+  if (qid === 'q2') return 'q3';
+  if (qid === 'q3') return parseInt(ans['q3'] || '10') <= 5 ? 'q4' : 'q5';
+  if (qid === 'q4') return 'q5';
+  if (qid === 'q5') return 'q7';
+  if (qid === 'q6') return 'q7';
+  if (qid === 'q7') return 'q8';
+  if (qid === 'q8') return 'q9';
+  if (qid === 'q9') return 'q10';
+  if (qid === 'q10') return 'q11';
+  if (qid === 'q11') return 'q12';
+  return null;
+}
+
+function validate(qid) {
+  var req = {q1:1,q2:1,q3:1,q5:1,q6:1,q8:1,q9:1,q10:1,q11:1};
+  if (!req[qid]) return true;
+  if (qid === 'q2') { if (!multi.q2 || !multi.q2.length) { showErr(qid); return false; } return true; }
+  if (qid === 'q8') { if (!document.getElementById('a-q8').value) { showErr(qid); return false; } return true; }
+  if (qid === 'q10') {
+    for (var i = 0; i < matrixRows.length; i++) { if (!matrix[matrixRows[i]]) { showErr(qid); return false; } }
+    return true;
+  }
+  if (!ans[qid]) { showErr(qid); return false; }
+  return true;
+}
+
+function showErr(qid) { var e = document.getElementById('e-' + qid); if (e) e.style.display = 'block'; }
+function hideErr(qid) { var e = document.getElementById('e-' + qid); if (e) e.style.display = 'none'; }
+
+var allQ = ['q1','q2','q3','q4','q5','q6','q7','q8','q9','q10','q11','q12'];
+
+function updateProgress() {
+  var idx = allQ.indexOf(cur) + 1;
+  var pct = Math.round(idx / allQ.length * 100);
+  document.getElementById('progFill').style.width = pct + '%';
+  document.getElementById('progLbl').textContent = 'Question ' + idx + ' of ' + allQ.length;
+}
+
+function advance(qid) {
+  if (qid === 'q7') { ans['q7'] = document.getElementById('sl-q7').value + '%'; }
+  if (qid === 'q4') { ans['q4'] = document.getElementById('a-q4').value || ''; }
+  if (qid === 'q8') { ans['q8'] = document.getElementById('a-q8').value; }
+  if (!validate(qid)) return;
+  var next = getNext(qid);
+  if (!next) { submitSurvey(); return; }
+  document.getElementById(cur).classList.remove('active');
+  hist.push(cur);
+  cur = next;
+  document.getElementById(cur).classList.add('active');
+  updateProgress();
+  window.scrollTo({ top: 0, behavior: 'smooth' });
+}
+
+function goBack() {
+  if (!hist.length) return;
+  document.getElementById(cur).classList.remove('active');
+  cur = hist.pop();
+  document.getElementById(cur).classList.add('active');
+  updateProgress();
+  window.scrollTo({ top: 0, behavior: 'smooth' });
+}
+
+var SHEET_URL = 'https://script.google.com/macros/s/AKfycbylG8a_Q8eEnwPMjKNNz_Kb4X__luaUlshUbP-LvW3Vp8h_q6DnktAThrqHD9-Zw9vsgg/exec';
+
+function submitSurvey() {
+  ans['q12'] = (document.getElementById('a-q12').value || '');
+  ans['q7'] = document.getElementById('sl-q7').value + '%';
+  var row = {
+    'Timestamp': new Date().toLocaleString(),
+    'Q1 - Shops Online': ans.q1 || 'N/A',
+    'Q2 - Categories': ans.q2 || 'N/A',
+    'Q3 - Satisfaction (1-10)': ans.q3 || 'N/A',
+    'Q4 - Improvement Suggestion': ans.q4 || 'N/A',
+    'Q5 - Delivery Speed (Stars)': ans.q5 || 'N/A',
+    'Q6 - Reason Not Shopping Online': ans.q6 || 'N/A',
+    'Q7 - % Physical Store Purchases': ans.q7 || 'N/A',
+    'Q8 - Preferred Platform': ans.q8 || 'N/A',
+    'Q9 - Monthly Spend': ans.q9 || 'N/A',
+    'Q10 - Price Importance': matrix['Price'] || 'N/A',
+    'Q10 - Quality Importance': matrix['Quality'] || 'N/A',
+    'Q10 - Brand Reputation Importance': matrix['Brand Reputation'] || 'N/A',
+    'Q10 - Delivery Speed Importance': matrix['Delivery Speed'] || 'N/A',
+    'Q10 - Reviews Importance': matrix['Reviews & Ratings'] || 'N/A',
+    'Q11 - Age Group': ans.q11 || 'N/A',
+    'Q12 - Comments': ans.q12 || ''
+  };
+  allResp.push(row);
+
+  document.getElementById(cur).classList.remove('active');
+  document.getElementById('progFill').style.width = '100%';
+  document.getElementById('progLbl').textContent = 'Completed!';
+
+  var ty = document.getElementById('thankyou');
+  ty.style.display = 'block';
+  document.getElementById('ty-status').textContent = 'Saving to Google Sheets...';
+  document.getElementById('ty-status').style.color = '#c17435';
+  window.scrollTo({ top: 0, behavior: 'smooth' });
+
+  fetch(SHEET_URL, {
+    method: 'POST',
+    mode: 'no-cors',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(row)
+  }).then(function() {
+    document.getElementById('ty-status').textContent = 'Response saved to Google Sheets!';
+    document.getElementById('ty-status').style.color = '#2d6a4f';
+  }).catch(function() {
+    document.getElementById('ty-status').textContent = 'Could not reach Google Sheets. Please download Excel as backup.';
+    document.getElementById('ty-status').style.color = '#c0392b';
+  });
+}
+
+function exportExcel() {
+  var ws = XLSX.utils.json_to_sheet(allResp);
+  var cols = Object.keys(allResp[0]).map(function(k) { return { wch: Math.max(k.length + 2, 20) }; });
+  ws['!cols'] = cols;
+  var wb = XLSX.utils.book_new();
+  XLSX.utils.book_append_sheet(wb, ws, 'Responses');
+  var summary = [
+    { Metric: 'Total Responses', Value: allResp.length },
+    { Metric: 'Export Date', Value: new Date().toLocaleString() },
+    { Metric: 'Survey', Value: 'Consumer Habits Survey 2025' }
+  ];
+  var ws2 = XLSX.utils.json_to_sheet(summary);
+  ws2['!cols'] = [{ wch: 22 }, { wch: 35 }];
+  XLSX.utils.book_append_sheet(wb, ws2, 'Summary');
+  XLSX.writeFile(wb, 'Survey_Responses.xlsx');
+}
+
+function restartSurvey() {
+  ans = {}; multi = { q2: [] }; matrix = {}; hist = []; cur = 'q1';
+  allQ.forEach(function(q) { document.getElementById(q).classList.remove('active'); });
+  document.getElementById('thankyou').style.display = 'none';
+  document.getElementById('q1').classList.add('active');
+  document.querySelectorAll('.opt').forEach(function(b) { b.classList.remove('sel'); });
+  document.querySelectorAll('select').forEach(function(s) { s.selectedIndex = 0; });
+  document.querySelectorAll('textarea').forEach(function(t) { t.value = ''; });
+  document.getElementById('sl-q7').value = 50;
+  document.getElementById('sv-q7').textContent = '50%';
+  document.querySelectorAll('.branch-note').forEach(function(n) { n.style.display = 'none'; });
+  buildStars(); buildMatrix();
+  document.querySelectorAll('#o-q3 .rbtn').forEach(function(b) { b.classList.remove('sel'); });
+  delete ans['q3']; delete ans['q5'];
+  document.getElementById('progFill').style.width = '8%';
+  document.getElementById('progLbl').textContent = 'Question 1 of 12';
+  window.scrollTo({ top: 0, behavior: 'smooth' });
+}
+
+buildOpts('q1', q1opts, false);
+buildOpts('q2', q2opts, true);
+buildOpts('q6', q6opts, false);
+buildOpts('q9', q9opts, false);
+buildOpts('q11', q11opts, false);
+buildRating();
+buildStars();
+buildMatrix();
+</script>
+</body>
+</html>
